@@ -132,13 +132,13 @@ double FluxFitParams::eval(double u, double v) const {
 
 ndarray::Array<double, 1> FluxFitParams::eval(ndarray::Array<double const, 1> const &x,
                                               ndarray::Array<double const, 1> const &y) const {
-    int const num = x.getShape()[0];
+    std::size_t const num = x.getShape()[0];
     if (y.getShape()[0] != num) {
         throw LSST_EXCEPT(pex::exceptions::LengthError,
                           str(boost::format("Size mismatch: %d vs %d") % x.getShape()[0] % y.getShape()[0]));
     }
     ndarray::Array<double, 1> out = ndarray::allocate(ndarray::makeVector(num));
-    for (int i = 0; i < num; ++i) {
+    for (std::size_t i = 0; i < num; ++i) {
         out[i] = eval(x[i], y[i]);
     }
     return out;
