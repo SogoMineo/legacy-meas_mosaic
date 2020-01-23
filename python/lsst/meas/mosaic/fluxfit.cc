@@ -70,9 +70,9 @@ PYBIND11_MODULE(fluxfit, mod) {
 
     // Workaround because fluxFit uses in/out arguments of STL container types
     mod.def("fluxFit", [](bool absolute, bool common, ObsVec matchVec, int nmatch, ObsVec sourceVec,
-                          int nsource, WcsDic wcsDic, CcdSet ccdSet, std::map<int, float> fexp,
+                          int nsource, WcsDic wcsDic, CONST_PTR(CcdSet) ccdSet, std::map<int, float> fexp,
                           std::map<int, float> fchip, FfpSet ffpSet, bool solveCcd) {
-        fluxFit(absolute, common, matchVec, nmatch, sourceVec, nsource, wcsDic, ccdSet, fexp, fchip, ffpSet,
+        fluxFit(absolute, common, matchVec, nmatch, sourceVec, nsource, wcsDic, *ccdSet, fexp, fchip, ffpSet,
                 solveCcd);
 
         return std::make_tuple(matchVec, sourceVec, wcsDic, ccdSet, fexp, fchip, ffpSet);

@@ -27,6 +27,7 @@ import unittest
 import numpy as np
 
 from lsst.daf.persistence import NoResults
+import lsst.geom
 import lsst.afw.geom
 import lsst.afw.image
 from lsst.afw.fits import readMetadata
@@ -127,9 +128,9 @@ class FluxFitBoundedFieldTestCase(lsst.utils.tests.TestCase):
         self.ccds = {0: 49, 2: 50, 3: 101, 1: 102}
         # Box is the same for all CCDs, since it's defined in CCD coordinates,
         # which are rotated w.r.t. focal plane coordinates.
-        self.bbox = lsst.afw.geom.Box2I(
-            lsst.afw.geom.Point2I(0, 0),
-            lsst.afw.geom.Point2I(2047, 4175)
+        self.bbox = lsst.geom.Box2I(
+            lsst.geom.Point2I(0, 0),
+            lsst.geom.Point2I(2047, 4175)
         )
         self.ffp = {}
         self.wcs = {}

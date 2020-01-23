@@ -50,7 +50,7 @@ namespace lsst {
 			 ObsVec& sourceVec,
 			 int nsource,
 			 WcsDic& wcsDic,
-			 CcdSet& ccdSet,
+			 CcdSet const& ccdSet,
 			 std::map<int, float>& fexp,
 			 std::map<int, float>& fchip,
 			 FfpSet &ffpSet,

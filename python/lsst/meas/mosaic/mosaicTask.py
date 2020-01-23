@@ -28,6 +28,7 @@ import astropy.units
 
 import multiprocessing
 
+import lsst.geom                        as geom
 import lsst.afw.geom                    as afwGeom
 import lsst.afw.image                   as afwImage
 import lsst.afw.math                    as afwMath
@@ -427,7 +428,7 @@ class SourceReader(object):
                 if hscRun is None:
                     if nQuarter%2 != 0:
                         naxis1, naxis2 = naxis2, naxis1
-                bbox = afwGeom.Box2I(afwGeom.Point2I(0, 0), afwGeom.Extent2I(naxis1, naxis2))
+                bbox = geom.Box2I(geom.Point2I(0, 0), geom.Extent2I(naxis1, naxis2))
                 cellSet = afwMath.SpatialCellSet(bbox, self.config.cellSize, self.config.cellSize)
                 for s in selSources:
                     if numpy.isfinite(s.getRa().asDegrees()): # get rid of NaN
@@ -501,13 +502,13 @@ class MosaicTask(pipeBase.CmdLineTask):
     def readCcd(self, dataRefList):
         self.log.info("Reading CCD info ...")
 
-        ccds = {}
-        for dataRef in dataRefList:
-            if dataRef.dataId["ccd"] not in ccds:
-                ccd = dataRef.get("camera")[int(dataRef.dataId["ccd"])]
-                ccds[dataRef.dataId["ccd"]] = ccd
+        givenCcds = set(int(dataRef.dataId["ccd"]) for dataRef in dataRefList)
+        cameraBuilder = dataRefList[0].get("camera").rebuild()
+        for ichip in list(cameraBuilder.getIdIter()):
+            if ichip not in givenCcds:
+                del cameraBuilder[ichip]
 
-        return ccds
+        return cameraBuilder.finish()
 
     def getWcsForCcd(self, dataRef):
         try:
@@ -528,7 +529,7 @@ class MosaicTask(pipeBase.CmdLineTask):
                     dataRef.datasetExists("srcMatch")):
                     wcs = self.getWcsForCcd(dataRef)
                     ccd = ccdSet[dataRef.dataId["ccd"]]
-                    offset = afwGeom.Extent2D(measMosaic.getCenterInFpPixels(ccd))
+                    offset = geom.Extent2D(measMosaic.getCenterInFpPixels(ccd))
                     wcsDic[dataRef.dataId["visit"]] = wcs.copyAtShiftedPixelOrigin(offset)
 
         return wcsDic
@@ -543,9 +544,12 @@ class MosaicTask(pipeBase.CmdLineTask):
                 dataRef.datasetExists("srcMatch")):
                 num[dataRef.dataId["ccd"]] += 1
 
-        for ichip in ccdSet:
+        cameraBuilder = ccdSet.rebuild()
+        for ichip in list(cameraBuilder.getIdIter()):
             if num[ichip] == 0:
-                ccdSet.erase(ichip)
+                del cameraBuilder[ichip]
+
+        return cameraBuilder.finish()
 
     def readCatalog(self, dataRefList, ct=None, numCoresForReadSource=1, readTimeout=9999, verbose=False):
         self.log.info("Reading catalogs ...")
@@ -640,7 +644,7 @@ class MosaicTask(pipeBase.CmdLineTask):
                 if nQuarter%4 != 0:
                     dimensions = afwImage.bboxFromMetadata(calexp_md).getDimensions()
                     if nQuarter%2 != 0:
-                        dimensions = afwGeom.Extent2I(dimensions.getY(), dimensions.getX())
+                        dimensions = geom.Extent2I(dimensions.getY(), dimensions.getX())
                     wcs = measAstrom.rotateWcsPixelsBy90(wcs, 4 - nQuarter, dimensions)
 
             try:
@@ -817,7 +821,7 @@ class MosaicTask(pipeBase.CmdLineTask):
     def checkOverlapWithTract(self, tractInfo, dataRefList, verbose=False):
         dataRefListExists = list()
         dataRefListOverlapWithTract = list()
-        tractBBox = afwGeom.Box2D(tractInfo.getBBox())
+        tractBBox = geom.Box2D(tractInfo.getBBox())
         tractWcs = tractInfo.getWcs()
         for dataRef in dataRefList:
             try:
@@ -830,8 +834,8 @@ class MosaicTask(pipeBase.CmdLineTask):
 
                 if self.config.requireTractOverlap:
                     naxis1, naxis2 = afwImage.bboxFromMetadata(md).getDimensions()
-                    bbox = afwGeom.Box2D(afwGeom.Box2I(
-                            afwGeom.Point2I(0, 0), afwGeom.Extent2I(naxis1, naxis2)))
+                    bbox = geom.Box2D(geom.Box2I(
+                            geom.Point2I(0, 0), geom.Extent2I(naxis1, naxis2)))
                     overlap = False
                     for corner in bbox.getCorners():
                         if tractBBox.contains(tractWcs.skyToPixel(wcs.pixelToSky(corner))):
@@ -885,24 +889,24 @@ class MosaicTask(pipeBase.CmdLineTask):
         ccdSet = self.readCcd(dataRefListUsed)
 
         if debug:
-            for ccd in ccdSet.values():
+            for ccd in ccdSet:
                 self.log.info(str(ccd.getId().getSerial()) + " " +
                               str(ccd.getCenter().getPixels(ccd.getPixelSize())) + " " +
                               str(ccd.getOrientation().getYaw()))
 
         wcsDic = self.readWcs(dataRefListUsed, ccdSet)
 
-        self.removeNonExistCcd(dataRefListUsed, ccdSet)
+        ccdSet = self.removeNonExistCcd(dataRefListUsed, ccdSet)
 
         if debug:
             for iexp, wcs in wcsDic.items():
                 self.log.info(str(iexp) + " " + str(wcs.getPixelOrigin()) + " " +
-                              str(wcs.getSkyOrigin().getPosition(afwGeom.degrees)))
+                              str(wcs.getSkyOrigin().getPosition(geom.degrees)))
 
         self.log.info("frameIds : " + str(list(wcsDic.keys())))
-        self.log.info("ccdIds : " + str(list(ccdSet.keys())))
+        self.log.info("ccdIds : " + str(list(ccdSet.getIdIter())))
 
-        d_lim = afwGeom.Angle(self.config.radXMatch, afwGeom.arcseconds)
+        d_lim = geom.Angle(self.config.radXMatch, geom.arcseconds)
         if debug:
             self.log.info("d_lim : %f" % d_lim)
 
@@ -912,7 +916,7 @@ class MosaicTask(pipeBase.CmdLineTask):
         measMosaic.flagSuspect(allMat, allSource, wcsDic)
 
         if self.config.clipSourcesOutsideTract:
-            tractBBox = afwGeom.Box2D(tractInfo.getBBox())
+            tractBBox = geom.Box2D(tractInfo.getBBox())
             tractWcs = tractInfo.getWcs()
             allSourceClipped = [ss for ss in allSource if tractBBox.contains(tractWcs.skyToPixel(ss[0].getSky()))]
             self.log.info("Num of allSources: %d" % (len(allSource)))
@@ -994,12 +998,12 @@ class MosaicTask(pipeBase.CmdLineTask):
 
             for m in matchVec:
                 wcs = wcsAll["%07d-%03d" % (m.iexp, m.ichip)]
-                m.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(m.x, m.y)))
+                m.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(m.x, m.y)))
 
             if len(sourceVec) != 0:
                 for s in sourceVec:
                     wcs = wcsAll["%07d-%03d" % (s.iexp, s.ichip)]
-                    s.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(s.x, s.y)))
+                    s.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(s.x, s.y)))
 
             del wcsAll
 

@@ -1,10 +1,10 @@
 from __future__ import print_function
 import math, numpy
+import lsst.geom                        as geom
 import lsst.pex.config                  as pexConfig
 import lsst.meas.mosaic                 as measMosaic
 import lsst.afw.cameraGeom              as cameraGeom
 import lsst.afw.cameraGeom.utils        as cameraGeomUtils
-import lsst.afw.geom                    as afwGeom
 import lsst.afw.image                   as afwImage
 import lsst.afw.table                   as afwTable
 from lsst.meas.photocal import PhotoCalTask
@@ -104,14 +104,18 @@ class PhotometricSolutionTask(PhotoCalTask):
         allMat = rootMat.mergeMat()
 
         # Read CCD information
-        ccdSet = {}
-        for ccdId in matchLists:
-            if matchLists[ccdId] is None:
-                continue
-            visit, ccd = self.decodeCcdExposureId(ccdId)
-            if ccd not in ccdSet:
-                ccdDev = cameraGeomUtils.findCcd(butler.mapper.camera, cameraGeom.Id(int(ccd)))
-                ccdSet[ccd] = ccdDev
+        givenCcds = set(
+            self.decodeCcdExposureId(ccdId)[1] # decodeCcdExposureId() returns (visit, ccd)
+            for ccdId in matchLists
+            if matchLists[ccdId] is not None
+            )
+
+        cameraBuilder = butler.get("camera").rebuild()
+        for ichip in list(cameraBuilder.getIdIter()):
+            if ichip not in givenCcds:
+                del cameraBuilder[ichip]
+
+        ccdSet = cameraBuilder.finish()
 
         # meas_mosaic specific wcs information
         wcsDic = {}
@@ -120,7 +124,7 @@ class PhotometricSolutionTask(PhotoCalTask):
             if visit not in wcsDic and wcsList[ccdId] is not None:
                 wcs = wcsList[ccdId]
                 ccdDev = ccdSet[ccd]
-                offset = afwGeom.Extent2D(ccdDev.getCenter().getPixels(ccdDev.getPixelSize()))
+                offset = geom.Extent2D(ccdDev.getCenter().getPixels(ccdDev.getPixelSize()))
                 wcsDic[visit] = wcs.copyAtShiftedPixelOrigin(offset)
 
         # meas_mosaic specific object list
@@ -130,7 +134,7 @@ class PhotometricSolutionTask(PhotoCalTask):
         # Apply Jocabian correction calculated from wcs
         for m in matchVec:
             wcs = wcsList[m.iexp*200+m.ichip]
-            m.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(m.x, m.y)))
+            m.mag -= 2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(m.x, m.y)))
 
         fluxFitOrder = self.config.fluxFitOrder
         absolute = True

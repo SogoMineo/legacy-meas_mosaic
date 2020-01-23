@@ -23,7 +23,7 @@ import re
 import numpy
 
 from . import getFCorImg, FluxFitParams, getJImg, calculateJacobian
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 import lsst.afw.table as afwTable
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
@@ -65,7 +65,7 @@ def applyMosaicResultsExposure(dataRef, calexp=None):
     if hscRun is None:
         if nQuarter%2 != 0:
             width, height = calexp.getDimensions()
-            dims = afwGeom.Extent2I(height, width)
+            dims = geom.Extent2I(height, width)
 
     # return results in meas_mosaic coordinate system
     mosaic = getMosaicResults(dataRef, dims)

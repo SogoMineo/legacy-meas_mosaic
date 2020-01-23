@@ -6,6 +6,7 @@ import numpy
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
+import lsst.geom                        as geom
 import lsst.pex.config                  as pexConfig
 import lsst.pipe.base                   as pipeBase
 from lsst.meas.mosaic.mosaicTask import MosaicTask
@@ -15,7 +16,6 @@ import lsst.meas.mosaic                 as measMosaic
 import lsst.meas.algorithms             as measAlg
 import lsst.meas.astrom                 as measAstrom
 import lsst.afw.image                   as afwImage
-import lsst.afw.geom                    as afwGeom
 import lsst.afw.table                   as afwTable
 
 from lsst.pipe.tasks.colorterms import ColortermLibrary
@@ -55,12 +55,12 @@ class CheckMosaicTask(MosaicTask):
                     ichip = ss[j].getChip()
                     x, y = ss[j].getX(), ss[j].getY()
                     wcs = wcsDic[iexp][ichip]
-                    ra, dec = wcs.pixelToSky(x, y).getPosition(afwGeom.degrees)
+                    ra, dec = wcs.pixelToSky(x, y).getPosition(geom.degrees)
                     dx_m.append((ra - ra_cat) * 3600)
                     dy_m.append((dec - dec_cat) * 3600)
                     mag = 2.5*math.log10(calibDic[iexp][ichip].getInstFluxAtZeroMagnitude()/ss[j].getFlux())
                     mcor = ffpDic[iexp][ichip].eval(x,y)
-                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(x, y)))
+                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(x, y)))
                     m0_m.append(mag_cat)
                     dm_m.append(mag+mcor+jcor-mag_cat)
 
@@ -79,7 +79,7 @@ class CheckMosaicTask(MosaicTask):
                         ichip = ss[j].getChip()
                         x, y = ss[j].getX(), ss[j].getY()
                         wcs = wcsDic[iexp][ichip]
-                        ra, dec = wcs.pixelToSky(x, y).getPosition(afwGeom.degrees)
+                        ra, dec = wcs.pixelToSky(x, y).getPosition(geom.degrees)
                         ra_source.append(ra)
                         dec_source.append(dec)
                         n += 1
@@ -89,7 +89,7 @@ class CheckMosaicTask(MosaicTask):
                         mag = 2.5*math.log10(calibDic[iexp][ichip].getInstFluxAtZeroMagnitude()/ss[j].getFlux())
                         err = 2.5 / math.log(10) * ss[j].getFluxErr() / ss[j].getFlux()
                         mcor = ffpDic[iexp][ichip].eval(x,y)
-                        jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(x, y)))
+                        jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(x, y)))
                         mag_source.append(mag+mcor+jcor)
                         Sx += (mag+mcor+jcor) / (err*err)
                         S  += 1. / (err*err)
@@ -124,7 +124,7 @@ class CheckMosaicTask(MosaicTask):
                     ichip = ss[j].getChip()
                     x, y = ss[j].getX(), ss[j].getY()
                     wcs = wcsDic[iexp][ichip]
-                    ra, dec = wcs.pixelToSky(x, y).getPosition(afwGeom.degrees)
+                    ra, dec = wcs.pixelToSky(x, y).getPosition(geom.degrees)
                     ra_source.append(ra)
                     dec_source.append(dec)
                     n += 1
@@ -134,7 +134,7 @@ class CheckMosaicTask(MosaicTask):
                     mag = 2.5*math.log10(calibDic[iexp][ichip].getInstFluxAtZeroMagnitude()/ss[j].getFlux())
                     err = 2.5 / math.log(10) * ss[j].getFluxErr() / ss[j].getFlux()
                     mcor = ffpDic[iexp][ichip].eval(x,y)
-                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(x, y)))
+                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(x, y)))
                     mag_source.append(mag+mcor+jcor)
                     Sx += (mag+mcor+jcor) / (err*err)
                     S  += 1. / (err*err)
@@ -179,7 +179,7 @@ class CheckMosaicTask(MosaicTask):
                         xs, ys = ss[j].getX(), ss[j].getY()
                         mcor = ffpDic[iexp][ichip].eval(xs, ys)
                         wcs = wcsDic[iexp][ichip]
-                        jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(xs, ys)))
+                        jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(xs, ys)))
                         Sxx += (mag+mcor+jcor)*(mag+mcor+jcor) / (err*err)
                         Sx  += (mag+mcor+jcor) / (err*err)
                         S   += 1. / (err*err)
@@ -208,7 +208,7 @@ class CheckMosaicTask(MosaicTask):
                     xs, ys = ss[j].getX(), ss[j].getY()
                     mcor = ffpDic[iexp][ichip].eval(xs, ys)
                     wcs = wcsDic[iexp][ichip]
-                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(xs, ys)))
+                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(xs, ys)))
                     Sxx += (mag+mcor+jcor)*(mag+mcor+jcor) / (err*err)
                     Sx  += (mag+mcor+jcor) / (err*err)
                     S   += 1. / (err*err)
@@ -408,14 +408,14 @@ class CheckMosaicTask(MosaicTask):
                 outData.id[i] = src.getId()
                 x, y = src.getX(), src.getY()
                 wcs = wcsDic[iexp][ichip]
-                ra, dec = wcs.pixelToSky(x, y).getPosition(afwGeom.degrees)
+                ra, dec = wcs.pixelToSky(x, y).getPosition(geom.degrees)
                 outData.ra[i] = ra
                 outData.dec[i] = dec
                 fluxMag0 = calibDic[iexp][ichip].getInstFluxAtZeroMagnitude()
                 flux = src.getFlux()
                 if flux > 0 and fluxMag0 > 0:
                     mcor = ffpDic[iexp][ichip].eval(x, y)
-                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, afwGeom.Point2D(x, y)))
+                    jcor = -2.5*math.log10(measMosaic.computeJacobian(wcs, geom.Point2D(x, y)))
                     outData.mag[i] = -2.5*math.log10(flux/fluxMag0) + mcor + jcor
                     outData.err[i] = 2.5/math.log(10) * src.getFluxErr() / flux
                     outData.corr[i] = mcor + jcor
@@ -536,7 +536,7 @@ class CheckMosaicTask(MosaicTask):
             sourceSet.append(ssVisit[visit])
             matchList.append(mlVisit[visit])
 
-        d_lim = afwGeom.Angle(self.config.radXMatch, afwGeom.arcseconds)
+        d_lim = geom.Angle(self.config.radXMatch, geom.arcseconds)
         nbrightest = self.config.nBrightest
 
         allMat, allSource = self.mergeCatalog(sourceSet, matchList, ccdSet, d_lim)

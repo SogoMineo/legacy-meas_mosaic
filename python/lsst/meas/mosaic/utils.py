@@ -28,6 +28,7 @@ import glob
 
 import matplotlib.mlab as mlab
 
+import lsst.geom as geom
 import lsst.afw.geom as afwGeom
 import lsst.afw.table as afwTable
 import lsst.afw.image as afwImage
@@ -180,16 +181,15 @@ def getCcdFpExtent(ccdSet):
     padding = 2500.0 # approx half ccd height + room for CCD spacing
     xMinFp, xMaxFp = 18000, -18000
     yMinFp, yMaxFp = 18000, -18000
-    for ichip in ccdSet:
-        ccd = ccdSet[ichip]
+    for ccd in ccdSet:
         center = getCenterInFpPixels(ccd)
         if center[0] > xMaxFp: xMaxFp = center[0]
         if center[0] < xMinFp: xMinFp = center[0]
         if center[1] > yMaxFp: yMaxFp = center[1]
         if center[1] < yMinFp: yMinFp = center[1]
 
-    fpMin = afwGeom.Point2D(round(xMinFp - padding, -3), round(yMinFp - padding, -3))
-    fpMax = afwGeom.Point2D(round(xMaxFp + padding, -3), round(yMaxFp + padding, -3))
+    fpMin = geom.Point2D(round(xMinFp - padding, -3), round(yMinFp - padding, -3))
+    fpMax = geom.Point2D(round(xMaxFp + padding, -3), round(yMaxFp + padding, -3))
 
     return fpMin, fpMax, deltaFp
 
@@ -197,7 +197,7 @@ def plotCcd(ccdSet):
     """!Plot outlines of CCDs in ccdSet
     """
     import matplotlib.pyplot as plt
-    for ccd in ccdSet.values():
+    for ccd in ccdSet:
         w = getWidth(ccd)
         h = getHeight(ccd)
         nQuarter = ccd.getOrientation().getNQuarter()
@@ -208,7 +208,7 @@ def plotCcd(ccdSet):
         vs = list()
         minU, minV = 18000.0, 18000.0
         for x, y in zip([0, w, w, 0, 0], [0, 0, h, h, 0]):
-            xy = afwGeom.Point2D(x, y)
+            xy = geom.Point2D(x, y)
             u, v = detPxToFpPxRot(ccd, xy)
             us.append(u)
             vs.append(v)
@@ -660,7 +660,7 @@ def plotResFlux(ccdSet, ffpSet, fexp, fchip, matchVec, sourceVec, outputDir):
 
     _r = []
     _dm = []
-    for ccd in ccdSet.values():
+    for ccd in ccdSet:
         w = getWidth(ccd)
         h = getHeight(ccd)
 
@@ -765,7 +765,7 @@ def writeWcsData(coeffSet, ccdSet, outputDir):
 
     with open(os.path.join(outputDir, "ccd.dat"), "wt") as f:
         f.write("#chip   centerXFp    centerYFp   yaw (rad)\n")
-        for ichip in ccdSet:
+        for ichip in ccdSet.getIdIter():
             ccd = ccdSet[ichip]
             center = getCenterInFpPixels(ccd)
             f.write("%4ld %12.4f %12.4f %10.7f\n" % (ichip, center[0], center[1], getYaw(ccd)))
@@ -882,7 +882,7 @@ def writeCatalog(coeffSet, ffpSet, fexp, fchip, matchVec, sourceVec, outputFile)
             continue
         r = catalog.addNew()
         r.setId(i)
-        r.setCoord(afwGeom.SpherePoint(ra[i], dec[i], afwGeom.radians))
+        r.setCoord(geom.SpherePoint(ra[i], dec[i], geom.radians))
         r.set(magKey, float(mag[i]))
         r.set(errKey, float(err[i]))
         r.set(numKey, int(numbers[i]))

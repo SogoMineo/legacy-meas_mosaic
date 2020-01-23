@@ -44,7 +44,7 @@ PYBIND11_MODULE(fluxFitBoundedField, mod) {
 
     cls.def(
         py::init<
-            afw::geom::Box2I const &,
+            lsst::geom::Box2I const &,
             std::shared_ptr<FluxFitParams> const &,
             std::shared_ptr<afw::geom::SkyWcs> const &,
             double, int>(),

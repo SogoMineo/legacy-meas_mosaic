@@ -45,7 +45,7 @@ void declareSource(py::module &mod) {
 
     cls.def(py::init<lsst::afw::table::SourceRecord const &>(), "record"_a);
     cls.def(py::init<lsst::afw::table::SimpleRecord const &, lsst::afw::geom::SkyWcs const &>());
-    cls.def(py::init<lsst::afw::geom::SpherePoint, double>(), "coord"_a,
+    cls.def(py::init<lsst::geom::SpherePoint, double>(), "coord"_a,
             "flux"_a = std::numeric_limits<double>::quiet_NaN());
     cls.def(py::init<typename Source::IdType, typename Source::ChipType, typename Source::ExpType, double,
                      double, double, double, double, double, double, double, bool>(),
@@ -214,8 +214,8 @@ void declareKDTree(py::module &mod) {
     cls.def("search", &Class::search);
     cls.def("findSource", &Class::findSource);
     cls.def("add", (void (Class::*)(SourceMatch const &)) & Class::add);
-    cls.def("add", (void (Class::*)(PTR(Source), lsst::afw::geom::Angle)) & Class::add, "s"_a,
-            "d_lim"_a = lsst::afw::geom::Angle(0, lsst::afw::geom::degrees));
+    cls.def("add", (void (Class::*)(PTR(Source), lsst::geom::Angle)) & Class::add, "s"_a,
+            "d_lim"_a = lsst::geom::Angle(0, lsst::geom::degrees));
     cls.def("count", &Class::count);
     cls.def("mergeMat", &Class::mergeMat);
     cls.def("mergeSource", &Class::mergeSource);
@@ -232,6 +232,7 @@ PYBIND11_MODULE(mosaicfit, mod) {
     py::module::import("lsst.afw.geom");
     py::module::import("lsst.afw.image");
     py::module::import("lsst.afw.table");
+    py::module::import("lsst.geom");
 
     declareSource(mod);
     declarePoly(mod);
@@ -245,7 +246,7 @@ PYBIND11_MODULE(mosaicfit, mod) {
     mod.def("obsVecFromSourceGroup", obsVecFromSourceGroup);
     // Workaround because solveMosaic_CCD_shot uses in/out arguments of STL container types
     mod.def("solveMosaic_CCD_shot",
-            [](int order, int nmatch, ObsVec &matchVec, WcsDic &wcsDic, CcdSet &ccdSet, bool solveCcd = true,
+            [](int order, int nmatch, ObsVec &matchVec, WcsDic &wcsDic, CONST_PTR(CcdSet) ccdSet, bool solveCcd = true,
                bool allowRotation = true, bool verbose = false, double catRMS = 0.0,
                bool writeSnapshots = false, std::string const &snapshotDir = ".") {
                 auto coeffSet =
@@ -259,7 +260,7 @@ PYBIND11_MODULE(mosaicfit, mod) {
     // Workaround because solveMosaic_CCD uses in/out arguments of STL container types
     mod.def("solveMosaic_CCD",
             [](int order, int nmatch, int nsource, ObsVec &matchVec, ObsVec &sourceVec, WcsDic &wcsDic,
-               CcdSet &ccdSet, bool solveCcd = true, bool allowRotation = true, bool verbose = false,
+               CONST_PTR(CcdSet) ccdSet, bool solveCcd = true, bool allowRotation = true, bool verbose = false,
                double catRMS = 0.0, bool writeSnapshots = false, std::string const &snapshotDir = ".") {
                 auto coeffSet =
                         solveMosaic_CCD(order, nmatch, nsource, matchVec, sourceVec, wcsDic, ccdSet, solveCcd,
@@ -279,10 +280,10 @@ PYBIND11_MODULE(mosaicfit, mod) {
     mod.def("getJImg", (std::shared_ptr<lsst::afw::image::Image<float>>(*)(
                                std::shared_ptr<lsst::afw::geom::SkyWcs> &, PTR(lsst::afw::cameraGeom::Detector) &))getJImg);
     mod.def("calculateJacobian",
-            (double (*)(afw::geom::SkyWcs const &, afw::geom::Point2D const &))calculateJacobian);
+            (double (*)(afw::geom::SkyWcs const &, lsst::geom::Point2D const &))calculateJacobian);
     mod.def("calculateJacobian",
             (ndarray::Array<double, 1>(*)(afw::geom::SkyWcs const &,
-                                          std::vector<afw::geom::Point2D> const &))calculateJacobian);
+                                          std::vector<lsst::geom::Point2D> const &))calculateJacobian);
     mod.def("calculateJacobian",
             (ndarray::Array<double, 1>(*)(afw::geom::SkyWcs const &, ndarray::Array<double const, 1> const &,
                                           ndarray::Array<double const, 1> const &))calculateJacobian);

@@ -21,7 +21,7 @@
 
 import unittest
 
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 import lsst.meas.mosaic as measMosaic
 import lsst.utils.tests as utilsTests
 
@@ -61,8 +61,8 @@ class ShimCameraGeomTestCase(utilsTests.TestCase):
 
     def testMakeScalingMmToPx(self):
         # HSC uses a scaling of 1mm to 1 pixel...not anymore!
-        extents = [afwGeom.Extent2D(0, 0), afwGeom.Point2D(100, 100)]
-        knownExtents = [afwGeom.Extent2D(0, 0), afwGeom.Point2D(100/self.pixelSize, 100/self.pixelSize)]
+        extents = [geom.Extent2D(0, 0), geom.Point2D(100, 100)]
+        knownExtents = [geom.Extent2D(0, 0), geom.Point2D(100/self.pixelSize, 100/self.pixelSize)]
         for ccd in self.ccds:
             scaling = measMosaic.makeScalingMmToPx(ccd.getPixelSize())
             for extent, knownExtent in zip(extents, knownExtents):
@@ -70,30 +70,30 @@ class ShimCameraGeomTestCase(utilsTests.TestCase):
 
     def testGetCenterInFpPixels(self):
         # HSC camGeom: ccd.getCenter().getPixels(ccd.getPixelSize())
-        known_results = [afwGeom.Point2D(0.28, -1925.76), afwGeom.Point2D(-9591.84, -14290.21),
-                         afwGeom.Point2D(6368.58, 15753.83), afwGeom.Point2D(9588.26, -14289.16)]
+        known_results = [geom.Point2D(0.28, -1925.76), geom.Point2D(-9591.84, -14290.21),
+                         geom.Point2D(6368.58, 15753.83), geom.Point2D(9588.26, -14289.16)]
         for ccd, center in zip(self.ccds, known_results):
             self.assertAlmostEqual(measMosaic.getCenterInFpPixels(ccd).getX(), center.getX())
             self.assertAlmostEqual(measMosaic.getCenterInFpPixels(ccd).getY(), center.getY())
 
     def testGetCenterInDetectorPixels(self):
         # HSC camGeom: ccd.getCenterPixel()
-        known_results = [afwGeom.Point2D(1023.5, 2087.5), afwGeom.Point2D(2087.5, 1023.5),
-                         afwGeom.Point2D(1023.5, 2087.5), afwGeom.Point2D(2087.5, 1023.5)]
+        known_results = [geom.Point2D(1023.5, 2087.5), geom.Point2D(2087.5, 1023.5),
+                         geom.Point2D(1023.5, 2087.5), geom.Point2D(2087.5, 1023.5)]
         for ccd, center in zip(self.ccds, known_results):
             self.assertEqual(measMosaic.getCenterInDetectorPixels(ccd), center)
 
     def testDetPxToFpPxRot(self):
         # HSC camGeom: ccd.getPositionFromPixel(point).getPixels(ccd.getPixelSize())
-        points = [afwGeom.Point2D(0.0, 0.0), afwGeom.Point2D(100.0, 100.0)]
-        known_results = [(afwGeom.Point2D(-1023.22, -4013.26),
-                          afwGeom.Point2D(-923.232793209, -3913.24720843)),
-                         (afwGeom.Point2D(-11679.34, -15313.71),
-                          afwGeom.Point2D(-11579.3917937, -15213.6582332)),
-                         (afwGeom.Point2D(5345.08, 13666.33),
-                          afwGeom.Point2D(5445.09318562, 13766.3168126)),
-                         (afwGeom.Point2D(7500.76, -15312.66),
-                          afwGeom.Point2D(7600.77964856, -15212.6796524))]
+        points = [geom.Point2D(0.0, 0.0), geom.Point2D(100.0, 100.0)]
+        known_results = [(geom.Point2D(-1023.22, -4013.26),
+                          geom.Point2D(-923.232793209, -3913.24720843)),
+                         (geom.Point2D(-11679.34, -15313.71),
+                          geom.Point2D(-11579.3917937, -15213.6582332)),
+                         (geom.Point2D(5345.08, 13666.33),
+                          geom.Point2D(5445.09318562, 13766.3168126)),
+                         (geom.Point2D(7500.76, -15312.66),
+                          geom.Point2D(7600.77964856, -15212.6796524))]
         for ccd, pts in zip(self.ccds, known_results):
             for point, pt in zip(points, pts):
                 pt.getX()

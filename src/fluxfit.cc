@@ -1640,7 +1640,7 @@ void flagObj_abs(std::vector<Obs::Ptr> &m, std::vector<Obs::Ptr> &s, double e2, 
 }
 
 void fluxFitRelative(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsource, WcsDic &wcsDic,
-                     CcdSet &ccdSet, std::map<int, float> &fexp, std::map<int, float> &fchip, FfpSet &ffpSet,
+                     CcdSet const &ccdSet, std::map<int, float> &fexp, std::map<int, float> &fchip, FfpSet &ffpSet,
                      bool solveCcd, bool common) {
     int nexp = wcsDic.size();
     int nchip = ccdSet.size();
@@ -1665,12 +1665,12 @@ void fluxFitRelative(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsourc
             fexp[it->first] = pow(10., -0.4 * (fsol(i) + f0));
         }
         if (solveCcd) {
-            for (CcdSet::iterator it = ccdSet.begin(); it != ccdSet.end(); it++, i++) {
+            for (auto it = ccdSet.getIdMap().begin(); it != ccdSet.getIdMap().end(); it++, i++) {
                 // fchip.insert(std::map<int, float>::value_type(it->first, pow(10., -0.4*fsol(i))));
                 fchip[it->first] = pow(10., -0.4 * fsol(i));
             }
         } else {
-            for (CcdSet::iterator it = ccdSet.begin(); it != ccdSet.end(); it++, i++) {
+            for (auto it = ccdSet.getIdMap().begin(); it != ccdSet.getIdMap().end(); it++, i++) {
                 // fchip.insert(std::map<int, float>::value_type(it->first, 1.0));
                 fchip[it->first] = 1.0;
             }
@@ -1708,7 +1708,7 @@ void fluxFitRelative(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsourc
 }
 
 void fluxFitAbsolute(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsource, WcsDic &wcsDic,
-                     CcdSet &ccdSet, std::map<int, float> &fexp, std::map<int, float> &fchip, FfpSet &ffpSet,
+                     CcdSet const &ccdSet, std::map<int, float> &fexp, std::map<int, float> &fchip, FfpSet &ffpSet,
                      bool solveCcd, bool common) {
     int nexp = wcsDic.size();
     int nchip = ccdSet.size();
@@ -1733,12 +1733,12 @@ void fluxFitAbsolute(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsourc
             fexp[it->first] = pow(10., -0.4 * (fsol(i) + f0));
         }
         if (solveCcd) {
-            for (CcdSet::iterator it = ccdSet.begin(); it != ccdSet.end(); it++, i++) {
+            for (auto it = ccdSet.getIdMap().begin(); it != ccdSet.getIdMap().end(); it++, i++) {
                 // fchip.insert(std::map<int, float>::value_type(it->first, pow(10., -0.4*fsol(i))));
                 fchip[it->first] = pow(10., -0.4 * fsol(i));
             }
         } else {
-            for (CcdSet::iterator it = ccdSet.begin(); it != ccdSet.end(); it++, i++) {
+            for (auto it = ccdSet.getIdMap().begin(); it != ccdSet.getIdMap().end(); it++, i++) {
                 // fchip.insert(std::map<int, float>::value_type(it->first, 1.0));
                 fchip[it->first] = 1.0;
             }
@@ -1776,7 +1776,7 @@ void fluxFitAbsolute(ObsVec &matchVec, int nmatch, ObsVec &sourceVec, int nsourc
 }
 
 void lsst::meas::mosaic::fluxFit(bool absolute, bool common, ObsVec &matchVec, int nmatch, ObsVec &sourceVec,
-                                 int nsource, WcsDic &wcsDic, CcdSet &ccdSet, std::map<int, float> &fexp,
+                                 int nsource, WcsDic &wcsDic, CcdSet const &ccdSet, std::map<int, float> &fexp,
                                  std::map<int, float> &fchip, FfpSet &ffpSet, bool solveCcd) {
     printf("fluxFit ...\n");
     if (absolute) {
@@ -1820,7 +1820,7 @@ FluxFitParams::Ptr lsst::meas::mosaic::convertFluxFitParams(FluxFitParams::Ptr &
         }
     }
 
-    afw::geom::Point2D newXY0 = computeX0Y0(ccd, x0, y0);
+    lsst::geom::Point2D newXY0 = computeX0Y0(ccd, x0, y0);
     newP->x0 = newXY0[0];
     newP->y0 = newXY0[1];
 
@@ -1870,10 +1870,10 @@ std::shared_ptr<lsst::afw::image::Image<float>> lsst::meas::mosaic::getFCorImg(
                 stop = interval + 1;
             }
 
-            afw::geom::Point2D uv =
-                detPxToFpPxRot(ccd, afw::geom::Point2D(x, y)) + afw::geom::Extent2D(coeff->x0, coeff->y0);
+            lsst::geom::Point2D uv =
+                detPxToFpPxRot(ccd, lsst::geom::Point2D(x, y)) + lsst::geom::Extent2D(coeff->x0, coeff->y0);
             double val0 = p->eval(uv.getX(), uv.getY());
-            uv = detPxToFpPxRot(ccd, afw::geom::Point2D(xend, y)) + afw::geom::Extent2D(coeff->x0, coeff->y0);
+            uv = detPxToFpPxRot(ccd, lsst::geom::Point2D(xend, y)) + lsst::geom::Extent2D(coeff->x0, coeff->y0);
             double val1 = p->eval(uv.getX(), uv.getY());
 
             for (int i = 0; i < stop; i++) {

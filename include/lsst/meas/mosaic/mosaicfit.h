@@ -9,6 +9,7 @@
 #include "lsst/afw/image.h"
 #include "lsst/afw/geom.h"
 #include "lsst/afw/cameraGeom.h"
+#include "lsst/afw/cameraGeom/Camera.h"
 #include "lsst/afw/table.h"
 
 namespace lsst {
@@ -45,9 +46,9 @@ namespace lsst {
 			    _err = sqrt(record.get(record.getSchema().find<double>("flux").key)*1.E-08);
 			}
                     }
-                Source(lsst::afw::geom::SpherePoint coord, double flux=std::numeric_limits<double>::quiet_NaN()) :
+                Source(lsst::geom::SpherePoint coord, double flux=std::numeric_limits<double>::quiet_NaN()) :
                     _id(-1), _chip(UNSET), _exp(UNSET), _sky(coord),
-                    _pixels(lsst::afw::geom::Point2D(std::numeric_limits<double>::quiet_NaN(),
+                    _pixels(lsst::geom::Point2D(std::numeric_limits<double>::quiet_NaN(),
                                                      std::numeric_limits<double>::quiet_NaN())),
                     _flux(flux), _err(std::numeric_limits<double>::quiet_NaN()),
                     _xerr(std::numeric_limits<double>::quiet_NaN()),
@@ -62,7 +63,7 @@ namespace lsst {
 		    bool astromBad
 		):
 		    _id(id), _chip(chip), _exp(exp),
-		    _sky(lsst::afw::geom::Angle(ra, lsst::afw::geom::degrees), lsst::afw::geom::Angle(dec, lsst::afw::geom::degrees)),
+		    _sky(lsst::geom::Angle(ra, lsst::geom::degrees), lsst::geom::Angle(dec, lsst::geom::degrees)),
 		    _pixels(x, y),
 		    _flux(flux), _err(fluxerr),
 		    _xerr(xerr), _yerr(yerr),
@@ -72,10 +73,10 @@ namespace lsst {
                 IdType getId() const { return _id; }
                 ChipType getChip() const { return _chip; }
                 ExpType getExp() const { return _exp; }
-                lsst::afw::geom::SpherePoint getSky() const { return _sky; }
-                lsst::afw::geom::Angle getRa() const { return getSky().getLongitude(); }
-                lsst::afw::geom::Angle getDec() const { return getSky().getLatitude(); }
-                lsst::afw::geom::Point2D getPixels() const { return _pixels; }
+                lsst::geom::SpherePoint getSky() const { return _sky; }
+                lsst::geom::Angle getRa() const { return getSky().getLongitude(); }
+                lsst::geom::Angle getDec() const { return getSky().getLatitude(); }
+                lsst::geom::Point2D getPixels() const { return _pixels; }
                 double getX() const { return getPixels().getX(); }
                 double getY() const { return getPixels().getY(); }
 		double getXErr() const { return _xerr; }
@@ -92,8 +93,8 @@ namespace lsst {
                 IdType _id;                       // Identifier
                 ChipType _chip;                   // Chip identifier
                 ExpType _exp;                     // Exposure identifier
-                lsst::afw::geom::SpherePoint _sky; // ICRS sky coordinates
-                lsst::afw::geom::Point2D _pixels; // Pixel coordinates
+                lsst::geom::SpherePoint _sky; // ICRS sky coordinates
+                lsst::geom::Point2D _pixels; // Pixel coordinates
                 double _flux;                     // Flux
                 double _err;			  // Flux Err
 		double _xerr;			  // x coordinate error
@@ -113,6 +114,7 @@ namespace lsst {
 	    class Poly {
 	    public:
 	        typedef std::shared_ptr<Poly> Ptr;
+	        typedef std::shared_ptr<const Poly> ConstPtr;
 
 		int order;
 		int ncoeff;
@@ -122,14 +124,15 @@ namespace lsst {
 		Poly(int order);
 		~Poly(void);
 		Poly(const Poly &p);
-		int getIndex(int i, int j);
-		int getXorder(int i) { return xorder[i]; }
-		int getYorder(int i) { return yorder[i]; }
+		int getIndex(int i, int j) const;
+		int getXorder(int i) const { return xorder[i]; }
+		int getYorder(int i) const { return yorder[i]; }
 	    };
 
 	    class Coeff {
 	    public:
 		typedef std::shared_ptr<Coeff> Ptr;
+		typedef std::shared_ptr<const Coeff> ConstPtr;
 
 		Poly::Ptr p;
 		int iexp;
@@ -146,9 +149,9 @@ namespace lsst {
 		Coeff(Poly::Ptr const & p);
 		~Coeff(void);
 		Coeff(const Coeff &c);
-		void show(void);
-		void uvToXiEta(double u, double v, double *xi, double *eta);
-		void xietaToUV(double xi, double eta, double *u, double *v);
+		void show(void) const ;
+		void uvToXiEta(double u, double v, double *xi, double *eta) const;
+		void xietaToUV(double xi, double eta, double *u, double *v) const;
 		double get_a(int i) { return a[i]; }
 		double get_b(int i) { return b[i]; }
 		double get_ap(int i) { return ap[i]; }
@@ -157,15 +160,15 @@ namespace lsst {
 		void set_b(int i, double v) { b[i] = v; }
 		void set_ap(int i, double v) { ap[i] = v; }
 		void set_bp(int i, double v) { bp[i] = v; }
-		double xi(double u, double v);
-		double eta(double u, double v);
-		double dxidu(double u, double v);
-		double dxidv(double u, double v);
-		double detadu(double u, double v);
-		double detadv(double u, double v);
-		double detJ(double u, double v);
+		double xi(double u, double v) const;
+		double eta(double u, double v) const;
+		double dxidu(double u, double v) const;
+		double dxidv(double u, double v) const;
+		double detadu(double u, double v) const;
+		double detadv(double u, double v) const;
+		double detJ(double u, double v) const;
 		int getNcoeff() { return p->ncoeff; }
-		double pixelScale(void);
+		double pixelScale(void) const;
 
                 // below lines originally for coeffFromTanWcs()
 		void set_D(double v) { D = v; }
@@ -173,11 +176,11 @@ namespace lsst {
 		void set_x0(double v) { x0 = v; }
 		void set_y0(double v) { y0 = v; }
 		void set_iexp(int v) { iexp = v; }
-		double get_D() { return D; }
-		double get_A() { return A; }
-		double get_x0() { return x0; }
-		double get_y0() { return y0; }
-		int get_iexp() { return iexp; }
+		double get_D() const { return D; }
+		double get_A() const { return A; }
+		double get_x0() const { return x0; }
+		double get_y0() const { return y0; }
+		int get_iexp() const { return iexp; }
 	    };
 
 	    class Obs {
@@ -218,10 +221,10 @@ namespace lsst {
 
 		Obs(int id, double ra, double dec, double x, double y, int ichip, int iexp);
 		Obs(int id, double ra, double dec, int ichip, int iexp);
-		void setUV(PTR(lsst::afw::cameraGeom::Detector) &ccd, double x0=0, double y0=0);
+		void setUV(CONST_PTR(lsst::afw::cameraGeom::Detector) const &ccd, double x0=0, double y0=0);
 		void setXiEta(double ra_c, double dec_c);
-		void setFitVal(Coeff::Ptr& c, Poly::Ptr p);
-		void setFitVal2(Coeff::Ptr& c, Poly::Ptr p);
+		void setFitVal(Coeff::ConstPtr const &c, Poly::ConstPtr const&p);
+		void setFitVal2(Coeff::ConstPtr const &c, Poly::ConstPtr const&p);
 	    };
 
 	    class KDTree
@@ -235,8 +238,8 @@ namespace lsst {
 
 		int depth;
 		int axis;
-                lsst::afw::geom::Angle location[2];
-		lsst::afw::geom::SpherePoint c;
+                lsst::geom::Angle location[2];
+		lsst::geom::SpherePoint c;
 		KDTree::Ptr left;
 		KDTree::Ptr right;
                 SourceSet set;
@@ -248,11 +251,11 @@ namespace lsst {
                 KDTree(SourceMatch const& m, int depth);
 
 		~KDTree();
-                ConstPtr search(lsst::afw::geom::SpherePoint const& sky) const;
+                ConstPtr search(lsst::geom::SpherePoint const& sky) const;
 		ConstPtr findSource(Source const& s) const;
                 void add(SourceMatch const& m);
 		void add(PTR(Source) s,
-                         lsst::afw::geom::Angle d_lim=lsst::afw::geom::Angle(0, lsst::afw::geom::degrees));
+                         lsst::geom::Angle d_lim=lsst::geom::Angle(0, lsst::geom::degrees));
 		int count(void);
 		SourceGroup mergeMat() const;
 		SourceGroup mergeSource(unsigned int minNumMatch = 2);
@@ -262,7 +265,7 @@ namespace lsst {
 		KDTree::Ptr findNearest(Source const& s);
 
 		double distance(Source const& s) const {
-                    return c.separation(lsst::afw::geom::SpherePoint(s.getRa(), s.getDec())).asDegrees();
+                    return c.separation(lsst::geom::SpherePoint(s.getRa(), s.getDec())).asDegrees();
                 }
 
             private:
@@ -270,7 +273,8 @@ namespace lsst {
                 void _initializeMatches(SourceMatchSet& m, int depth);
             };
 
-	    typedef std::map<int, PTR(lsst::afw::cameraGeom::Detector)> CcdSet;
+	    // typedef std::map<int, PTR(lsst::afw::cameraGeom::Detector)> CcdSet;
+	    typedef lsst::afw::cameraGeom::Camera CcdSet;
 	    typedef std::map<int, Coeff::Ptr> CoeffSet;
 	    typedef std::vector<Obs::Ptr> ObsVec;
 
@@ -282,7 +286,7 @@ namespace lsst {
 	    KDTree::Ptr kdtreeSource(SourceGroup const &sourceSet,
 				     KDTree::Ptr rootMat,
 				     CcdSet &ccdSet,
-				     lsst::afw::geom::Angle d_lim);
+				     lsst::geom::Angle d_lim);
 
 	    ObsVec obsVecFromSourceGroup(SourceGroup const &all,
 					 WcsDic &wcsDic,
@@ -292,7 +296,7 @@ namespace lsst {
 					  int nmatch,
 					  ObsVec &matchVec,
 					  WcsDic &wcsDic,
-					  CcdSet &ccdSet,
+					  CONST_PTR(CcdSet) &ccdSet,
 					  bool solveCcd = true,
 					  bool allowRotation = true,
 					  bool verbose = false,
@@ -306,7 +310,7 @@ namespace lsst {
 				     ObsVec &matchVec,
 				     ObsVec &sourceVec,
 				     WcsDic &wcsDic,
-				     CcdSet &ccdSet,
+				     CONST_PTR(CcdSet) &ccdSet,
 				     bool solveCcd = true,
 				     bool allowRotation = true,
 				     bool verbose = false,

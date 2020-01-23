@@ -54,7 +54,7 @@ bool sharedPtrsEqual(std::shared_ptr<T> const& a, std::shared_ptr<T> const& b) {
 }  // namespace
 
 FluxFitBoundedField::FluxFitBoundedField(
-    afw::geom::Box2I const & bbox,
+    lsst::geom::Box2I const & bbox,
     std::shared_ptr<FluxFitParams> const & ffp,
     std::shared_ptr<afw::geom::SkyWcs> const & wcs,
     double zeroPoint,
@@ -75,21 +75,21 @@ FluxFitBoundedField::FluxFitBoundedField(
         );
     }
     if (_nQuarter != 0) {
-        auto r = afw::geom::LinearTransform::makeRotation(_nQuarter*90*afw::geom::degrees);
+        auto r = lsst::geom::LinearTransform::makeRotation(_nQuarter*90*lsst::geom::degrees);
         if (_nQuarter == 2) {
-            _transform = afw::geom::AffineTransform(
+            _transform = lsst::geom::AffineTransform(
                 r,
-                afw::geom::Extent2D(bbox.getWidth() - 1, bbox.getHeight() - 1)
+                lsst::geom::Extent2D(bbox.getWidth() - 1, bbox.getHeight() - 1)
             );
         } else if (_nQuarter == 3) {
-            _transform = afw::geom::AffineTransform(r, afw::geom::Extent2D(0, bbox.getWidth() - 1));
+            _transform = lsst::geom::AffineTransform(r, lsst::geom::Extent2D(0, bbox.getWidth() - 1));
         } else if (_nQuarter == 1) {
-            _transform = afw::geom::AffineTransform(r, afw::geom::Extent2D(bbox.getHeight() - 1, 0));
+            _transform = lsst::geom::AffineTransform(r, lsst::geom::Extent2D(bbox.getHeight() - 1, 0));
         }
     }
 }
 
-double FluxFitBoundedField::evaluate(afw::geom::Point2D const & position) const {
+double FluxFitBoundedField::evaluate(lsst::geom::Point2D const & position) const {
     double r = utils::referenceFlux/_zeroPoint;
     if (_ffp) {
         auto xy = _transform(position);
@@ -198,7 +198,7 @@ public:
         auto wcs = archive.get<afw::geom::SkyWcs>(record.get(keys.wcs));
 
         // NOTE: needed invert=false in case min=-1, max=0 (empty bbox). See RFC-324 and DM-10200
-        afw::geom::Box2I bbox(record.get(keys.bboxMin), record.get(keys.bboxMax), false);
+        lsst::geom::Box2I bbox(record.get(keys.bboxMin), record.get(keys.bboxMax), false);
 
         auto ffp = std::make_shared<FluxFitParams>(
             keys.order,
